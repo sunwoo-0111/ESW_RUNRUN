@@ -93,10 +93,10 @@ def Game():
         if isblock:
             block.append([240, 240 - 12])  # 바닥
         else:
-            print("holecounted")
+            print(holeCount)
             holeCount += 1
 
-        if random.randint(0, 4) == 0 or holeCount > 3:
+        if random.randint(0, 4) == 0:
         # 기둥의 높이를 랜덤으로 설정 (24, 36 중 하나)
             obstacleHeight = random.choice([24, 36])
             block.append([240, 240 - obstacleHeight])
@@ -163,32 +163,28 @@ def Game():
     font_12 = ImageFont.truetype(font_path, size = 12)
     font_20 = ImageFont.truetype(font_path, size = 20)
     
-    def paused_game():
-        nonlocal paused
-        paused = not paused
+
+    # 버튼 눌렀을 때의 판정
     while running:
-        
-        button_C.when_pressed = paused_game
-   
         if button_U.is_pressed:
             if jumpable:
-                playerVerticalSpeed -= 8 
+                playerVerticalSpeed -= 8 #점프 
                 jumpable = False
 
         if button_D.is_pressed:
-            playerSlide = True
+            playerSlide = True #슬라이딩
         else:
             if playerSlide:
                 playerPos[1]-=12
             playerSlide = False
 
-        if score % 4 == 0:
+        if score % 4 == 0: 
             newMap(block, isblock, holeCount)
         score += 1
 
 
         playerPos[1] += playerVerticalSpeed
-        playerVerticalSpeed += 1.2
+        playerVerticalSpeed += 1 
         playerVerticalSpeed = min(playerVerticalSpeed, 5)
 
         if time.time() < invincible_until:
@@ -196,6 +192,8 @@ def Game():
         else:
             invincible = False # 다시 끄기
 
+
+        #무적일 때의 캐릭터
         if invincible:
             usePlayerImage = playerImage_.copy()
             if playerSlide:
@@ -226,9 +224,6 @@ def Game():
                 playerPos[1] = b[1] - playerSize[1]
                 playerVerticalSpeed = 0
                 jumpable = True
-            elif col == 2:
-                playerPos[1] = b[1] + playerSize[1]
-                playerVerticalSpeed = 0
             elif col == 3: #벽에 부딫히면 목숨 소모,그리고 1초동안 무적 상태 그리고 원래위치 돌아오기
                 if time.time() > invincible_until:
                     lives -= 1
@@ -238,7 +233,7 @@ def Game():
                 playerPos[0] = b[0] - playerSize[0]
 
 
-        #recovering
+        #recovering -> 플레이어 정중앙 위치시키기
         if playerPos[0] < 120:
             playerPos[0] += 1.5
             if playerPos[0] == 120:
@@ -252,9 +247,10 @@ def Game():
         # 추격자 이동 로직 (묵숨이 달때 쫒아오는것 + 목숨을 먹었을 때 멀어지는 것 까지 구현)
         if chaserActive:
             if invincible:
-                if(playerPos[0]<120):
+                if(playerPos[0]<120): # 벽에 걸렸을 때는 생명개수 상관없이 사망
                     chaserPos[0] += chaserSpeed
                 else:
+                    #추격자와 플레이어 간의 거리 조절(생명 개수에 따라 나뉨)
                     if lives >= 3:
                         chaserPos[0] -= 1
                         if chaserPos[0] == 0:
@@ -302,6 +298,7 @@ def Game():
         bg = backgroundImage.copy()
         draw = ImageDraw.Draw(bg)
         for b in block:
+            #점수에 따른 속도조절
             draw.rounded_rectangle((
                 b[0], b[1], b[0] + 12, b[1] + 12
             ), 2, (0, 0, 0))
@@ -314,7 +311,7 @@ def Game():
             else:
                 b[0] -= 6
 
-        # running 중 현재점수, 남은 목숨 , 최고점수 띄우기
+        # running 중 현재점수, 남은 목숨, 최고점수 띄우기
         
         if(score <= high_score):
             draw.text((5,5), f"Score: {score}", fill=(0,0,0), font=font_12)
@@ -327,14 +324,13 @@ def Game():
         bg.paste(usePlayerImage, (int(playerPos[0]), int(playerPos[1])))
         bg.paste(chaserImage, (int(chaserPos[0]),int(chaserPos[1])))
         # 하트 아이템 구현
-
         heartImage = Image.open("images/heart.png")
         if heartPos is None and lives<3 and random.randint(0,100) < 1:
             heartPos = [240,240-36]
         
         if heartPos:
             bg.paste(heartImage, (heartPos[0],heartPos[1]))
-            heartPos[0] -= 3
+            heartPos[0] -= 3 # 하트 위치 조절 (플레이어가 먹기 편한 위치)
             if (heartPos[0] <= playerPos[0] + 12 and heartPos[0] + heartImage.width >= playerPos[0] and
                 heartPos[1] >= playerPos[1] and heartPos[1] <= playerPos[1] + 24):
                     heartPos = None
@@ -347,7 +343,11 @@ def Game():
             running = False
 
         disp.image(bg)
-        time.sleep(0.01)
+        time.sleep(0.01) # 프레임 조절
+    ######### 여기까지 게임함수
+
+
+    ###### 게임 오버 화면
 
     bg = backgroundImage.copy()
     draw = ImageDraw.Draw(bg)
@@ -359,7 +359,9 @@ def Game():
     # 플레이어와 추격자 이미지 그리기
     bg.paste(playerImage, (int(playerPos[0]), int(playerPos[1])))
     bg.paste(chaserImage, (int(chaserPos[0]), int(chaserPos[1])))
-    # 게임 오버 화면
+    
+
+
     isScoreDraw = False
     while True:
         if button_A.is_pressed:
@@ -384,7 +386,7 @@ def Game():
         isScoreDraw = not isScoreDraw
 
         disp.image(bg_)
-        time.sleep(0.1)
+        time.sleep(0.01)
 
 while(True):
     start_game()
